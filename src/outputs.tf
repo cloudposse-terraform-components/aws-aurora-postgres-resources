@@ -20,6 +20,6 @@ output "additional_grants" {
 
 # Add a Hello World output for Terratest
 output "hello_world" {
-  value       = "Hello, Terratest!"
+  value       = local.enabled ? "Hello, Terratest!" : null
   description = "A simple Hello World output for Terratest validation."
 }
