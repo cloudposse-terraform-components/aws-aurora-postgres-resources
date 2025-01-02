@@ -17,3 +17,9 @@ output "additional_grants" {
   value       = keys(module.additional_grants)
   description = "Additional grants"
 }
+
+# Add a Hello World output for Terratest
+output "hello_world" {
+  value       = local.enabled ? "Hello, Terratest!" : null
+  description = "A simple Hello World output for Terratest validation."
+}
