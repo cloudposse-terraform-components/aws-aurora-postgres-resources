@@ -2,7 +2,7 @@ locals {
   enabled = module.this.enabled
 
   db_user     = length(var.db_user) > 0 ? var.db_user : var.service_name
-  db_password = length(var.db_password) > 0 ? var.db_password : join("", random_password.db_password.*.result)
+  db_password = length(var.db_password) > 0 ? var.db_password : join("", random_password.db_password[*].result)
 
   save_password_in_ssm = local.enabled && var.save_password_in_ssm
 
@@ -45,7 +45,7 @@ resource "postgresql_role" "default" {
 # Apply the configured grants to the user
 resource "postgresql_grant" "default" {
   count       = local.enabled ? length(var.grants) : 0
-  role        = join("", postgresql_role.default.*.name)
+  role        = join("", postgresql_role.default[*].name)
   database    = var.grants[count.index].db
   schema      = var.grants[count.index].schema
   object_type = var.grants[count.index].object_type
