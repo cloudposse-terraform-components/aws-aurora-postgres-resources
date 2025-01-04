@@ -5,5 +5,3 @@ repository:
   description: 'This component is responsible for provisioning Aurora Postgres resources: additional databases, users, permissions, grants, etc'
   homepage: https://cloudposse.com/accelerate
   topics: terraform, terraform-component
-
-
