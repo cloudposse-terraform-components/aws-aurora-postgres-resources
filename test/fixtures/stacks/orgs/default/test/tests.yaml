@@ -1,0 +1,10 @@
+import:
+  - orgs/default/test/_defaults
+  - catalog/dns-primary
+  - catalog/dns-delegated
+  - catalog/vpc
+  - catalog/aurora-postgres
+  - catalog/usecase/database
+  - catalog/usecase/schema
+  - catalog/usecase/user
+  - catalog/usecase/grant

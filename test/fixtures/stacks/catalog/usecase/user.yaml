@@ -1,0 +1,16 @@
+components:
+  terraform:
+    aurora-postgres-resources/user:
+      metadata:
+        component: aurora-postgres-resources
+      vars:
+        enabled: true
+        additional_users:
+          example:
+            db_user: example
+            db_password: ""
+            grants:
+              - grant: ["ALL"]
+                db: postgres
+                object_type: database
+                schema: ""
