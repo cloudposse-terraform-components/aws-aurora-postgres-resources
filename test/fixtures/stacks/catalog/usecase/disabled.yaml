@@ -1,8 +1,8 @@
 components:
   terraform:
-    aurora-postgres-resources/database:
+    aurora-postgres-resources/disabled:
       metadata:
         component: target
       vars:
-        enabled: true
+        enabled: false
         additional_databases: ["test-db"]

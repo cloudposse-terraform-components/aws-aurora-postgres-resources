@@ -2,7 +2,7 @@ components:
   terraform:
     aurora-postgres-resources/user:
       metadata:
-        component: aurora-postgres-resources
+        component: target
       vars:
         enabled: true
         additional_users:

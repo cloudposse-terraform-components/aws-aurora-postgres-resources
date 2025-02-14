@@ -2,7 +2,7 @@ components:
   terraform:
     aurora-postgres-resources/schema:
       metadata:
-        component: aurora-postgres-resources
+        component: target
       vars:
         enabled: true
         additional_schemas:

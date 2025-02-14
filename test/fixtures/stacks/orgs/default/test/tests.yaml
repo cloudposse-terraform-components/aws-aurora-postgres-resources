@@ -8,3 +8,4 @@ import:
   - catalog/usecase/schema
   - catalog/usecase/user
   - catalog/usecase/grant
+  - catalog/usecase/disabled

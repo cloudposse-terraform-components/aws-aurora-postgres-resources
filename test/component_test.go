@@ -1,305 +1,234 @@
 package test
 
 import (
-	"database/sql"
 	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/cloudposse/test-helpers/pkg/atmos"
-	helper "github.com/cloudposse/test-helpers/pkg/atmos/aws-component-helper"
+	helper "github.com/cloudposse/test-helpers/pkg/atmos/component-helper"
+	awshelper "github.com/cloudposse/test-helpers/pkg/aws"
 	"github.com/gruntwork-io/terratest/modules/aws"
 	"github.com/gruntwork-io/terratest/modules/random"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
-func TestComponent(t *testing.T) {
-	t.Parallel()
-	// Define the AWS region to use for the tests
-	awsRegion := "us-east-2"
+type ComponentSuite struct {
+	helper.TestSuite
+}
 
-	// Initialize the test fixture
-	fixture := helper.NewFixture(t, "../", awsRegion, "test/fixtures")
+func (s *ComponentSuite) TestDatabase() {
+	const component = "aurora-postgres-resources/database"
+	const stack = "default-test"
+	const awsRegion = "us-east-2"
 
-	// Ensure teardown is executed after the test
-	defer fixture.TearDown()
-	fixture.SetUp(&atmos.Options{})
+	databaseName := strings.ToLower(random.UniqueId())
+	inputs := map[string]interface{}{
+		"additional_databases": []string{databaseName},
+	}
 
-	// Define the test suite
-	fixture.Suite("default", func(t *testing.T, suite *helper.Suite) {
-		// t.Parallel()
-		suite.AddDependency("vpc", "default-test")
+	defer s.DestroyAtmosComponent(s.T(), component, stack, &inputs)
+	options, _ := s.DeployAtmosComponent(s.T(), component, stack, &inputs)
+	assert.NotNil(s.T(), options)
 
-		// Setup phase: Create DNS zones and postgresql for testing
-		suite.Setup(t, func(t *testing.T, atm *helper.Atmos) {
-			// Deploy the delegated DNS zone
-			inputs := map[string]interface{}{
-				"zone_config": []map[string]interface{}{
+	clusterComponent := s.GetAtmosOptions("aurora-postgres", "default-test", nil)
+	configMap := map[string]interface{}{}
+	atmos.OutputStruct(s.T(), clusterComponent, "config_map", &configMap)
+
+	passwordSSMKey, ok := configMap["password_ssm_key"].(string)
+	assert.True(s.T(), ok, "password_ssm_key should be a string")
+
+	adminUsername, ok := configMap["username"].(string)
+	assert.True(s.T(), ok, "username should be an string")
+
+	adminUserPassword := aws.GetParameter(s.T(), awsRegion, passwordSSMKey)
+
+	dbUrl, ok := configMap["hostname"].(string)
+	assert.True(s.T(), ok, "hostname should be a string")
+
+	dbPort, ok := configMap["port"].(float64)
+	assert.True(s.T(), ok, "database_port should be an int")
+
+	schemaExistsInRdsInstance := awshelper.GetWhetherDatabaseExistsInRdsPostgresInstance(s.T(), dbUrl, int32(dbPort), adminUsername, adminUserPassword, databaseName)
+	assert.True(s.T(), schemaExistsInRdsInstance)
+
+	s.DriftTest(component, stack, &inputs)
+}
+
+func (s *ComponentSuite) TestSchema() {
+	const component = "aurora-postgres-resources/schema"
+	const stack = "default-test"
+	const awsRegion = "us-east-2"
+
+	schemaName := strings.ToLower(random.UniqueId())
+	inputs := map[string]interface{}{
+		"additional_schemas": map[string]interface{}{
+			schemaName: map[string]interface{}{
+				"database": "postgres",
+			},
+		},
+	}
+
+	defer s.DestroyAtmosComponent(s.T(), component, stack, &inputs)
+	options, _ := s.DeployAtmosComponent(s.T(), component, stack, &inputs)
+	assert.NotNil(s.T(), options)
+
+	clusterComponent := s.GetAtmosOptions("aurora-postgres", "default-test", nil)
+	configMap := map[string]interface{}{}
+	atmos.OutputStruct(s.T(), clusterComponent, "config_map", &configMap)
+
+	passwordSSMKey, ok := configMap["password_ssm_key"].(string)
+	assert.True(s.T(), ok, "password_ssm_key should be a string")
+
+	adminUsername, ok := configMap["username"].(string)
+	assert.True(s.T(), ok, "username should be an string")
+
+	adminUserPassword := aws.GetParameter(s.T(), awsRegion, passwordSSMKey)
+
+	dbUrl, ok := configMap["hostname"].(string)
+	assert.True(s.T(), ok, "hostname should be a string")
+
+	dbPort, ok := configMap["port"].(float64)
+	assert.True(s.T(), ok, "database_port should be an int")
+
+	schemaExistsInRdsInstance := awshelper.GetWhetherSchemaExistsInRdsPostgresInstance(s.T(), dbUrl, int32(dbPort), adminUsername, adminUserPassword, "postgres", schemaName)
+	assert.True(s.T(), schemaExistsInRdsInstance)
+
+	s.DriftTest(component, stack, &inputs)
+}
+
+func (s *ComponentSuite) TestUser() {
+	const component = "aurora-postgres-resources/user"
+	const stack = "default-test"
+	const awsRegion = "us-east-2"
+
+	userName := strings.ToLower(random.UniqueId())
+	serviceName := strings.ToLower(random.UniqueId())
+	inputs := map[string]interface{}{
+		"additional_users": map[string]interface{}{
+			serviceName: map[string]interface{}{
+				"db_user":     userName,
+				"db_password": "",
+				"grants": []map[string]interface{}{
 					{
-						"subdomain": suite.GetRandomIdentifier(),
-						"zone_name": "components.cptest.test-automation.app",
+						"grant":       []string{"ALL"},
+						"db":          "postgres",
+						"object_type": "database",
+						"schema":      "",
 					},
 				},
-			}
-			atm.GetAndDeploy("dns-delegated", "default-test", inputs)
-			atm.GetAndDeploy("aurora-postgres", "default-test", map[string]interface{}{
-				"cluster_name": suite.GetRandomIdentifier(),
-			})
-		})
+			},
+		},
+	}
 
-		// Teardown phase: Destroy the DNS zones and postgresql created during setup
-		suite.TearDown(t, func(t *testing.T, atm *helper.Atmos) {
-			atm.GetAndDestroy("aurora-postgres", "default-test", map[string]interface{}{})
-			// Deploy the delegated DNS zone
-			inputs := map[string]interface{}{
-				"zone_config": []map[string]interface{}{
-					{
-						"subdomain": suite.GetRandomIdentifier(),
-						"zone_name": "components.cptest.test-automation.app",
-					},
-				},
-			}
-			atm.GetAndDestroy("dns-delegated", "default-test", inputs)
-		})
+	defer s.DestroyAtmosComponent(s.T(), component, stack, &inputs)
+	options, _ := s.DeployAtmosComponent(s.T(), component, stack, &inputs)
+	assert.NotNil(s.T(), options)
 
-		// Test phase: Validate the functionality of the component
-		suite.Test(t, "database", func(t *testing.T, atm *helper.Atmos) {
-			databaseName := strings.ToLower(random.UniqueId())
+	clusterComponent := s.GetAtmosOptions("aurora-postgres", "default-test", nil)
+	configMap := map[string]interface{}{}
+	atmos.OutputStruct(s.T(), clusterComponent, "config_map", &configMap)
 
-			inputs := map[string]interface{}{
-				"additional_databases": []string{databaseName},
-			}
+	clusterIdenitfier := atmos.Output(s.T(), clusterComponent, "cluster_identifier")
 
-			defer atm.GetAndDestroy("aurora-postgres-resources/database", "default-test", inputs)
-			component := atm.GetAndDeploy("aurora-postgres-resources/database", "default-test", inputs)
-			assert.NotNil(t, component)
+	passwordSSMKey := fmt.Sprintf("/aurora-postgres/%s/%s/passwords/%s", clusterIdenitfier, serviceName, userName)
+	userPassword := aws.GetParameter(s.T(), awsRegion, passwordSSMKey)
 
-			clusterComponent := helper.NewAtmosComponent("aurora-postgres", "default-test", map[string]interface{}{})
-			configMap := map[string]interface{}{}
-			atm.OutputStruct(clusterComponent, "config_map", &configMap)
+	dbUrl, ok := configMap["hostname"].(string)
+	assert.True(s.T(), ok, "hostname should be a string")
 
-			passwordSSMKey, ok := configMap["password_ssm_key"].(string)
-			assert.True(t, ok, "password_ssm_key should be a string")
+	dbPort, ok := configMap["port"].(float64)
+	assert.True(s.T(), ok, "database_port should be an int")
 
-			adminUsername, ok := configMap["username"].(string)
-			assert.True(t, ok, "username should be an string")
+	schemaExistsInRdsInstance := awshelper.GetWhetherDatabaseExistsInRdsPostgresInstance(s.T(), dbUrl, int32(dbPort), userName, userPassword, "postgres")
+	assert.True(s.T(), schemaExistsInRdsInstance)
 
-			adminUserPassword := aws.GetParameter(t, awsRegion, passwordSSMKey)
-
-			dbUrl, ok := configMap["hostname"].(string)
-			assert.True(t, ok, "hostname should be a string")
-
-			dbPort, ok := configMap["port"].(float64)
-			assert.True(t, ok, "database_port should be an int")
-
-			schemaExistsInRdsInstance := GetWhetherDatabaseExistsInRdsPostgresInstance(t, dbUrl, int32(dbPort), adminUsername, adminUserPassword, databaseName)
-			assert.True(t, schemaExistsInRdsInstance)
-		})
-
-		suite.Test(t, "schema", func(t *testing.T, atm *helper.Atmos) {
-			schemaName := strings.ToLower(random.UniqueId())
-			inputs := map[string]interface{}{
-				"additional_schemas": map[string]interface{}{
-					schemaName: map[string]interface{}{
-						"database": "postgres",
-					},
-				},
-			}
-			defer atm.GetAndDestroy("aurora-postgres-resources/schema", "default-test", inputs)
-			component := atm.GetAndDeploy("aurora-postgres-resources/schema", "default-test", inputs)
-			assert.NotNil(t, component)
-
-			clusterComponent := helper.NewAtmosComponent("aurora-postgres", "default-test", map[string]interface{}{})
-			configMap := map[string]interface{}{}
-			atm.OutputStruct(clusterComponent, "config_map", &configMap)
-
-			passwordSSMKey, ok := configMap["password_ssm_key"].(string)
-			assert.True(t, ok, "password_ssm_key should be a string")
-
-			adminUsername, ok := configMap["username"].(string)
-			assert.True(t, ok, "username should be an string")
-
-			adminUserPassword := aws.GetParameter(t, awsRegion, passwordSSMKey)
-
-			dbUrl, ok := configMap["hostname"].(string)
-			assert.True(t, ok, "hostname should be a string")
-
-			dbPort, ok := configMap["port"].(float64)
-			assert.True(t, ok, "database_port should be an int")
-
-			schemaExistsInRdsInstance := GetWhetherSchemaExistsInRdsPostgresInstance(t, dbUrl, int32(dbPort), adminUsername, adminUserPassword, "postgres", schemaName)
-			assert.True(t, schemaExistsInRdsInstance)
-		})
-
-		suite.Test(t, "user", func(t *testing.T, atm *helper.Atmos) {
-			userName := strings.ToLower(random.UniqueId())
-			serviceName := strings.ToLower(random.UniqueId())
-			inputs := map[string]interface{}{
-				"additional_users": map[string]interface{}{
-					serviceName: map[string]interface{}{
-						"db_user":     userName,
-						"db_password": "",
-						"grants": []map[string]interface{}{
-							{
-								"grant":       []string{"ALL"},
-								"db":          "postgres",
-								"object_type": "database",
-								"schema":      "",
-							},
-						},
-					},
-				},
-			}
-			defer atm.GetAndDestroy("aurora-postgres-resources/user", "default-test", inputs)
-			component := atm.GetAndDeploy("aurora-postgres-resources/user", "default-test", inputs)
-			assert.NotNil(t, component)
-
-			clusterComponent := helper.NewAtmosComponent("aurora-postgres", "default-test", map[string]interface{}{})
-			configMap := map[string]interface{}{}
-			atm.OutputStruct(clusterComponent, "config_map", &configMap)
-
-			clusterIdenitfier := atm.Output(clusterComponent, "cluster_identifier")
-
-			passwordSSMKey := fmt.Sprintf("/aurora-postgres/%s/%s/passwords/%s", clusterIdenitfier, serviceName, userName)
-			userPassword := aws.GetParameter(t, awsRegion, passwordSSMKey)
-
-			dbUrl, ok := configMap["hostname"].(string)
-			assert.True(t, ok, "hostname should be a string")
-
-			dbPort, ok := configMap["port"].(float64)
-			assert.True(t, ok, "database_port should be an int")
-
-			schemaExistsInRdsInstance := GetWhetherDatabaseExistsInRdsPostgresInstance(t, dbUrl, int32(dbPort), userName, userPassword, "postgres")
-			assert.True(t, schemaExistsInRdsInstance)
-		})
-
-		suite.Test(t, "grant", func(t *testing.T, atm *helper.Atmos) {
-			t.Skip("Additional grants not working. Read more https://github.com/cloudposse-terraform-components/aws-aurora-postgres-resources/issues/17")
-			userName := strings.ToLower(random.UniqueId())
-			serviceName := strings.ToLower(random.UniqueId())
-			inputs := map[string]interface{}{
-				"additional_users": map[string]interface{}{
-					serviceName: map[string]interface{}{
-						"db_user":     userName,
-						"db_password": "",
-						"grants":      []map[string]interface{}{},
-					},
-				},
-			}
-			defer atm.GetAndDestroy("aurora-postgres-resources/grant", "default-test", inputs)
-			component := atm.GetAndDeploy("aurora-postgres-resources/grant", "default-test", inputs)
-			assert.NotNil(t, component)
-
-			clusterComponent := helper.NewAtmosComponent("aurora-postgres", "default-test", map[string]interface{}{})
-			configMap := map[string]interface{}{}
-			atm.OutputStruct(clusterComponent, "config_map", &configMap)
-
-			clusterIdenitfier := atm.Output(clusterComponent, "cluster_identifier")
-
-			passwordSSMKey := fmt.Sprintf("/aurora-postgres/%s/%s/passwords/%s", clusterIdenitfier, serviceName, userName)
-			userPassword := aws.GetParameter(t, awsRegion, passwordSSMKey)
-
-			dbUrl, ok := configMap["hostname"].(string)
-			assert.True(t, ok, "hostname should be a string")
-
-			dbPort, ok := configMap["port"].(float64)
-			assert.True(t, ok, "database_port should be an int")
-
-			component.Vars["additional_grants"] = map[string]interface{}{
-				userName: []map[string]interface{}{
-					{
-						"grant": []string{"ALL"},
-						"db":    "postgres",
-					},
-				},
-			}
-
-			atm.Deploy(component)
-
-			grantsExistsInRdsInstance := GetWhetherGrantsExistsInRdsPostgresInstance(t, dbUrl, int32(dbPort), userName, userPassword, "postgres", "public")
-			assert.True(t, grantsExistsInRdsInstance)
-		})
-
-	})
+	s.DriftTest(component, stack, &inputs)
 }
 
-func GetWhetherDatabaseExistsInRdsPostgresInstance(t *testing.T, dbUrl string, dbPort int32, dbUsername string, dbPassword string, databaseName string) bool {
-	output, err := GetWhetherDatabaseExistsInRdsPostgresInstanceE(t, dbUrl, dbPort, dbUsername, dbPassword, databaseName)
-	require.NoError(t, err)
-	return output
+func (s *ComponentSuite) TestGrant() {
+	const component = "aurora-postgres-resources/grant"
+	const stack = "default-test"
+	const awsRegion = "us-east-2"
+
+	userName := strings.ToLower(random.UniqueId())
+	serviceName := strings.ToLower(random.UniqueId())
+	inputs := map[string]interface{}{
+		"additional_users": map[string]interface{}{
+			serviceName: map[string]interface{}{
+				"db_user":     userName,
+				"db_password": "",
+				"grants":      []map[string]interface{}{},
+			},
+		},
+	}
+
+	defer s.DestroyAtmosComponent(s.T(), component, stack, &inputs)
+	options, _ := s.DeployAtmosComponent(s.T(), component, stack, &inputs)
+	assert.NotNil(s.T(), options)
+
+	clusterComponent := s.GetAtmosOptions("aurora-postgres", "default-test", nil)
+	configMap := map[string]interface{}{}
+	atmos.OutputStruct(s.T(), clusterComponent, "config_map", &configMap)
+
+	clusterIdenitfier := atmos.Output(s.T(), clusterComponent, "cluster_identifier")
+
+	passwordSSMKey := fmt.Sprintf("/aurora-postgres/%s/%s/passwords/%s", clusterIdenitfier, serviceName, userName)
+	userPassword := aws.GetParameter(s.T(), awsRegion, passwordSSMKey)
+
+	dbUrl, ok := configMap["hostname"].(string)
+	assert.True(s.T(), ok, "hostname should be a string")
+
+	dbPort, ok := configMap["port"].(float64)
+	assert.True(s.T(), ok, "database_port should be an int")
+
+	inputs["additional_grants"] = map[string]interface{}{
+		userName: []map[string]interface{}{
+			{
+				"grant": []string{"ALL"},
+				"db":    "postgres",
+			},
+		},
+	}
+
+	options, _ = s.DeployAtmosComponent(s.T(), component, stack, &inputs)
+	assert.NotNil(s.T(), options)
+
+	grantsExistsInRdsInstance := awshelper.GetWhetherGrantsExistsInRdsPostgresInstance(s.T(), dbUrl, int32(dbPort), userName, userPassword, "postgres", "public")
+	assert.True(s.T(), grantsExistsInRdsInstance)
+
+	s.DriftTest(component, stack, &inputs)
 }
 
-func GetWhetherDatabaseExistsInRdsPostgresInstanceE(t *testing.T, dbUrl string, dbPort int32, dbUsername string, dbPassword string, databaseName string) (bool, error) {
-	connectionString := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s", dbUrl, dbPort, dbUsername, dbPassword, databaseName)
+func (s *ComponentSuite) TestDisabled() {
+	const component = "aurora-postgres-resources/disabled"
+	const stack = "default-test"
+	const awsRegion = "us-east-2"
 
-	db, connErr := sql.Open("pgx", connectionString)
-	if connErr != nil {
-		return false, connErr
-	}
-	defer db.Close()
-	return true, nil
+	s.VerifyEnabledFlag(component, stack, nil)
 }
 
-func GetWhetherSchemaExistsInRdsPostgresInstance(t *testing.T, dbUrl string, dbPort int32, dbUsername string, dbPassword string, databaseName string, expectedSchemaName string) bool {
-	output, err := GetWhetherSchemaExistsInRdsPostgresInstanceE(t, dbUrl, dbPort, dbUsername, dbPassword, databaseName, expectedSchemaName)
-	if err != nil {
-		t.Fatal(err)
+func TestRunSuite(t *testing.T) {
+	suite := new(ComponentSuite)
+
+	suite.AddDependency(t, "vpc", "default-test", nil)
+
+	subdomain := strings.ToLower(random.UniqueId())
+	dnsDelegatedInputs := map[string]interface{}{
+		"zone_config": []map[string]interface{}{
+			{
+				"subdomain": subdomain,
+				"zone_name": "components.cptest.test-automation.app",
+			},
+		},
 	}
-	return output
+	suite.AddDependency(t, "dns-delegated", "default-test", &dnsDelegatedInputs)
+
+	clusterName := strings.ToLower(random.UniqueId())
+	auroraPostgresInputs := map[string]interface{}{
+		"cluster_name": clusterName,
+	}
+	suite.AddDependency(t, "aurora-postgres", "default-test", &auroraPostgresInputs)
+	helper.Run(t, suite)
 }
 
-func GetWhetherSchemaExistsInRdsPostgresInstanceE(t *testing.T, dbUrl string, dbPort int32, dbUsername string, dbPassword string, databaseName string, expectedSchemaName string) (bool, error) {
-	connectionString := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s", dbUrl, dbPort, dbUsername, dbPassword, databaseName)
-
-	db, connErr := sql.Open("pgx", connectionString)
-	if connErr != nil {
-		return false, connErr
-	}
-	defer db.Close()
-	var (
-		schemaName string
-	)
-	sqlStatement := `SELECT "schema_name" FROM "information_schema"."schemata" where schema_name=$1`
-	row := db.QueryRow(sqlStatement, expectedSchemaName)
-	scanErr := row.Scan(&schemaName)
-	if scanErr != nil {
-		return false, scanErr
-	}
-	return true, nil
-}
-
-func GetWhetherGrantsExistsInRdsPostgresInstance(t *testing.T, dbUrl string, dbPort int32, dbUsername string, dbPassword string, databaseName string, expectedSchemaName string) bool {
-	output, err := GetWhetherGrantsExistsInRdsPostgresInstanceE(t, dbUrl, dbPort, dbUsername, dbPassword, databaseName, expectedSchemaName)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return output
-}
-
-func GetWhetherGrantsExistsInRdsPostgresInstanceE(t *testing.T, dbUrl string, dbPort int32, dbUsername string, dbPassword string, databaseName string, expectedSchemaName string) (bool, error) {
-	connectionString := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s", dbUrl, dbPort, dbUsername, dbPassword, databaseName)
-
-	db, connErr := sql.Open("pgx", connectionString)
-	if connErr != nil {
-		return false, connErr
-	}
-	defer db.Close()
-	var (
-		schemaName string
-	)
-	sqlStatement := `SELECT grantee AS user, CONCAT(table_schema, '.', table_name) AS table,
-			CASE
-				WHEN COUNT(privilege_type) = 7 THEN 'ALL'
-				ELSE ARRAY_TO_STRING(ARRAY_AGG(privilege_type), ', ')
-			END AS grants
-		FROM information_schema.role_table_grants
-		WHERE grantee = '$1'
-		GROUP BY table_name, table_schema, grantee;`
-	row := db.QueryRow(sqlStatement, dbUsername)
-	scanErr := row.Scan(&schemaName)
-	if scanErr != nil {
-		return false, scanErr
-	}
-	return true, nil
-}
