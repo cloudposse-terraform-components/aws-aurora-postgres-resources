@@ -12,8 +12,6 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-// replace github.com/cloudposse/test-helpers => /Users/goruha/projects/cloudposse/current/cloudposse-terraform-components/test-helpers
-
 require (
 	dario.cat/mergo v1.0.1 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
