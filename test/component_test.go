@@ -49,7 +49,7 @@ func (s *ComponentSuite) TestDatabase() {
 	dbPort, ok := configMap["port"].(float64)
 	assert.True(s.T(), ok, "database_port should be an int")
 
-	schemaExistsInRdsInstance := awshelper.GetWhetherDatabaseExistsInRdsPostgresInstance(s.T(), dbUrl, int32(dbPort), adminUsername, adminUserPassword, databaseName)
+	schemaExistsInRdsInstance := awshelper.AssertPotgresqlDatabaseExists(s.T(), dbUrl, int32(dbPort), adminUsername, adminUserPassword, databaseName)
 	assert.True(s.T(), schemaExistsInRdsInstance)
 
 	s.DriftTest(component, stack, &inputs)
@@ -91,7 +91,7 @@ func (s *ComponentSuite) TestSchema() {
 	dbPort, ok := configMap["port"].(float64)
 	assert.True(s.T(), ok, "database_port should be an int")
 
-	schemaExistsInRdsInstance := awshelper.GetWhetherSchemaExistsInRdsPostgresInstance(s.T(), dbUrl, int32(dbPort), adminUsername, adminUserPassword, "postgres", schemaName)
+	schemaExistsInRdsInstance := awshelper.AssertPotgresqlSchemaExists(s.T(), dbUrl, int32(dbPort), adminUsername, adminUserPassword, "postgres", schemaName)
 	assert.True(s.T(), schemaExistsInRdsInstance)
 
 	s.DriftTest(component, stack, &inputs)
@@ -140,7 +140,7 @@ func (s *ComponentSuite) TestUser() {
 	dbPort, ok := configMap["port"].(float64)
 	assert.True(s.T(), ok, "database_port should be an int")
 
-	schemaExistsInRdsInstance := awshelper.GetWhetherDatabaseExistsInRdsPostgresInstance(s.T(), dbUrl, int32(dbPort), userName, userPassword, "postgres")
+	schemaExistsInRdsInstance := awshelper.AssertPotgresqlDatabaseExists(s.T(), dbUrl, int32(dbPort), userName, userPassword, "postgres")
 	assert.True(s.T(), schemaExistsInRdsInstance)
 
 	s.DriftTest(component, stack, &inputs)
@@ -194,7 +194,7 @@ func (s *ComponentSuite) TestGrant() {
 	options, _ = s.DeployAtmosComponent(s.T(), component, stack, &inputs)
 	assert.NotNil(s.T(), options)
 
-	grantsExistsInRdsInstance := awshelper.GetWhetherGrantsExistsInRdsPostgresInstance(s.T(), dbUrl, int32(dbPort), userName, userPassword, "postgres", "public")
+	grantsExistsInRdsInstance := awshelper.AssertPotgresqlGrantsExists(s.T(), dbUrl, int32(dbPort), userName, userPassword, "postgres", "public")
 	assert.True(s.T(), grantsExistsInRdsInstance)
 
 	s.DriftTest(component, stack, &inputs)
