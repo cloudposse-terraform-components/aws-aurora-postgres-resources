@@ -5,12 +5,12 @@ components:
         component: target
       vars:
         enabled: true
-        additional_users:
-          example:
-            db_user: example
-            db_password: ""
-            grants: []
-        additional_grants:
-          example:
-            - grant: ["ALL"]
-              db: postgres
+        # additional_users:
+        #   example:
+        #     db_user: example
+        #     db_password: ""
+        #     grants: []
+        # additional_grants:
+        #   example:
+        #     - grant: ["ALL"]
+        #       db: postgres

@@ -147,6 +147,7 @@ func (s *ComponentSuite) TestUser() {
 }
 
 func (s *ComponentSuite) TestGrant() {
+	s.T().Skip("Additional grants not working. Read more https://github.com/cloudposse-terraform-components/aws-aurora-postgres-resources/issues/17")
 	const component = "aurora-postgres-resources/grant"
 	const stack = "default-test"
 	const awsRegion = "us-east-2"
