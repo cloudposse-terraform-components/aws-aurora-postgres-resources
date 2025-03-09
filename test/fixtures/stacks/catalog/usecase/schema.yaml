@@ -1,0 +1,10 @@
+components:
+  terraform:
+    aurora-postgres-resources/schema:
+      metadata:
+        component: target
+      vars:
+        enabled: true
+        additional_schemas:
+          test-schema:
+            database: postgres
