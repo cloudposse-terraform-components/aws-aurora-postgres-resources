@@ -47,6 +47,12 @@ variable "cluster_enabled" {
   description = "Set to `false` to prevent the module from creating any resources"
 }
 
+variable "kms_key_arn" {
+  type        = string
+  description = "The ARN for the KMS encryption key."
+  default     = null
+}
+
 variable "additional_databases" {
   type        = set(string)
   default     = []
