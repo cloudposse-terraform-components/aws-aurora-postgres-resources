@@ -8,7 +8,7 @@ locals {
   ssm_path_prefix         = format("/%s/%s", var.ssm_path_prefix, module.aurora_postgres.outputs.cluster_identifier)
   ssm_password_source     = length(var.ssm_password_source) > 0 ? var.ssm_password_source : format("%s/%s", local.ssm_path_prefix, "%s/password")
 
-  kms_key_arn = module.aurora_postgres.outputs.kms_key_arn
+  kms_key_arn = coalesce(module.aurora_postgres.outputs.kms_key_arn, var.kms_key_arn)
 
   default_schema_owner = "postgres"
 }
