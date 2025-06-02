@@ -58,7 +58,7 @@ resource "postgresql_grant" "default" {
 
 module "parameter_store_write" {
   source  = "cloudposse/ssm-parameter-store/aws"
-  version = "0.10.0"
+  version = "0.13.0"
 
   # kms_arn will only be used for SecureString parameters
   kms_arn = var.kms_key_id # not necessarily ARN — alias works too
