@@ -10,29 +10,6 @@ tags:
 This component is responsible for provisioning Aurora Postgres resources: additional databases, users, permissions,
 grants, etc.
 
-## Usage
-
-**Stack Level**: Regional
-
-Here's an example snippet for how to use this component.
-
-```yaml
-components:
-  terraform:
-    aurora-postgres-resources:
-      vars:
-        aurora_postgres_component_name: aurora-postgres-example
-        additional_users:
-          example:
-            db_user: example
-            db_password: ""
-            grants:
-              - grant: ["ALL"]
-                db: example
-                object_type: database
-                schema: ""
-```
-
 ## PostgreSQL Quick Reference on Grants
 
 GRANTS can be on database, schema, role, table, and other database objects (e.g. columns in a table for fine control).
@@ -74,7 +51,32 @@ procedure, routine, foreign_data_wrapper, foreign_server, column), the component
 that type in the specified schema.
 
 <!-- prettier-ignore-start -->
-<!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+<!-- prettier-ignore-end -->
+## Usage
+
+**Stack Level**: Regional
+
+Here's an example snippet for how to use this component.
+
+```yaml
+components:
+  terraform:
+    aurora-postgres-resources:
+      vars:
+        aurora_postgres_component_name: aurora-postgres-example
+        additional_users:
+          example:
+            db_user: example
+            db_password: ""
+            grants:
+              - grant: ["ALL"]
+                db: example
+                object_type: database
+                schema: ""
+```
+
+
+<!-- markdownlint-disable -->
 ## Requirements
 
 | Name | Version |
@@ -153,16 +155,21 @@ that type in the specified schema.
 | <a name="output_additional_grants"></a> [additional\_grants](#output\_additional\_grants) | Additional grants |
 | <a name="output_additional_schemas"></a> [additional\_schemas](#output\_additional\_schemas) | Additional schemas |
 | <a name="output_additional_users"></a> [additional\_users](#output\_additional\_users) | Additional users |
-<!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
-<!-- prettier-ignore-end -->
+<!-- markdownlint-restore -->
+
+
 
 ## References
 
-- [cloudposse/terraform-aws-components](https://github.com/cloudposse/terraform-aws-components/tree/main/modules/aurora-postgres-resources) -
-  Cloud Posse's upstream component
 
-- PostgreSQL references (select the correct version of PostgreSQL at the top of the page):
-  - [GRANT command](https://www.postgresql.org/docs/14/sql-grant.html)
-  - [Privileges that can be GRANTed](https://www.postgresql.org/docs/14/ddl-priv.html)
+- [cloudposse-terraform-components](https://github.com/orgs/cloudposse-terraform-components/repositories) - Cloud Posse's upstream component
+
+- [GRANT command](https://www.postgresql.org/docs/14/sql-grant.html) - 
+
+- [Privileges that can be GRANTed](https://www.postgresql.org/docs/14/ddl-priv.html) - 
+
+
+
 
 [<img src="https://cloudposse.com/logo-300x69.svg" height="32" align="right"/>](https://cpco.io/homepage?utm_source=github&utm_medium=readme&utm_campaign=cloudposse-terraform-components/aws-aurora-postgres-resources&utm_content=)
+
