@@ -41,6 +41,7 @@ module "additional_users" {
   service_name    = each.key
   db_user         = each.value.db_user
   db_password     = each.value.db_password
+  roles           = each.value.roles
   grants          = each.value.grants
   ssm_path_prefix = local.ssm_path_prefix
   kms_key_id      = local.kms_key_arn

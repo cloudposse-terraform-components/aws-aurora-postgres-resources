@@ -64,6 +64,7 @@ variable "additional_users" {
   type = map(object({
     db_user : string
     db_password : string
+    roles : optional(list(string), [])
     grants : list(object({
       grant : list(string)
       db : string

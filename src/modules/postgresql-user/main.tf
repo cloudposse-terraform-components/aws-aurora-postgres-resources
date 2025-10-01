@@ -1,9 +1,9 @@
 locals {
   enabled = module.this.enabled
 
-  db_user     = length(var.db_user) > 0 ? var.db_user : var.service_name
-  db_password = length(var.db_password) > 0 ? var.db_password : join("", random_password.db_password[*].result)
-
+  db_user              = length(var.db_user) > 0 ? var.db_user : var.service_name
+  db_password          = length(var.db_password) > 0 ? var.db_password : join("", random_password.db_password[*].result)
+  db_roles             = try(length(var.roles) > 0 ? var.roles : null, null)
   save_password_in_ssm = local.enabled && var.save_password_in_ssm
 
   db_password_key = format("%s/%s/passwords/%s", var.ssm_path_prefix, var.service_name, local.db_user)
@@ -14,6 +14,7 @@ locals {
     type        = "SecureString"
     overwrite   = true
   } : null
+
 
   parameter_write = local.save_password_in_ssm ? [local.db_password_ssm] : []
 
@@ -40,6 +41,7 @@ resource "postgresql_role" "default" {
   name     = local.db_user
   password = local.db_password
   login    = true
+  roles    = local.db_roles
 }
 
 # Apply the configured grants to the user

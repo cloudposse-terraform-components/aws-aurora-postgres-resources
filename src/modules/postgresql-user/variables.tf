@@ -15,6 +15,12 @@ variable "db_password" {
   default     = ""
 }
 
+variable "roles" {
+  type        = list(string)
+  description = "Roles that will be granted to the created user."
+  default     = null
+}
+
 variable "grants" {
   type = list(object({
     grant : list(string)
