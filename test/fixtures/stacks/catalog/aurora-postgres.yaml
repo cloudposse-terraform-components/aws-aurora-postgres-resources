@@ -20,7 +20,7 @@ components:
         # Serverless v2 configuration
         engine_mode: provisioned
         instance_type: "db.serverless" # serverless engine_mode ignores `var.instance_type`
-        engine_version: "13.15" # Latest supported version as of 08/28/2023
+        engine_version: "13.22" # Latest supported version as of 08/28/2023
         cluster_family: aurora-postgresql13
         cluster_size: 1
          # serverless
