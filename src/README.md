@@ -73,8 +73,12 @@ components:
                 db: example
                 object_type: database
                 schema: ""
+            role_memberships:
+              - reporting_reader
+              - reporting_writer
 ```
 
+Use the optional `role_memberships` list inside an `additional_users` entry to grant existing database roles to the user managed by this module.
 
 <!-- markdownlint-disable -->
 ## Requirements

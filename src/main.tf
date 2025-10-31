@@ -38,12 +38,13 @@ module "additional_users" {
   for_each = local.enabled ? var.additional_users : {}
   source   = "./modules/postgresql-user"
 
-  service_name    = each.key
-  db_user         = each.value.db_user
-  db_password     = each.value.db_password
-  grants          = each.value.grants
-  ssm_path_prefix = local.ssm_path_prefix
-  kms_key_id      = local.kms_key_arn
+  service_name     = each.key
+  db_user          = each.value.db_user
+  db_password      = each.value.db_password
+  grants           = each.value.grants
+  role_memberships = try(each.value.role_memberships, [])
+  ssm_path_prefix  = local.ssm_path_prefix
+  kms_key_id       = local.kms_key_arn
 
   depends_on = [
     postgresql_database.additional,

@@ -28,6 +28,12 @@ variable "grants" {
   default     = [{ grant : ["ALL"], db : "*", schema : "", object_type : "database" }]
 }
 
+variable "role_memberships" {
+  type        = list(string)
+  default     = []
+  description = "List of roles to grant membership in for the user created by this module."
+}
+
 variable "ssm_path_prefix" {
   type        = string
   default     = "aurora-postgres"
