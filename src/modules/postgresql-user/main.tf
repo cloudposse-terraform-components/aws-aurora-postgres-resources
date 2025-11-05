@@ -23,6 +23,12 @@ locals {
   # https://github.com/cyrilgdn/terraform-provider-postgresql/blob/master/postgresql/helpers.go#L237-L244
   all_privileges_database = ["CREATE", "CONNECT", "TEMPORARY"]
   all_privileges_schema   = ["CREATE", "USAGE"]
+  role_membership_pairs = local.enabled ? [
+    for grant_role in var.role_memberships : {
+      role       = local.db_user
+      grant_role = grant_role
+    }
+  ] : []
 }
 
 resource "random_password" "db_password" {
@@ -54,6 +60,15 @@ resource "postgresql_grant" "default" {
   # or schema privileges if this is a db grant or a schema grant respectively.
   # We can determine this is a schema grant if a schema is given
   privileges = contains(var.grants[count.index].grant, "ALL") ? ((length(var.grants[count.index].schema) > 0) ? local.all_privileges_schema : local.all_privileges_database) : var.grants[count.index].grant
+}
+
+resource "postgresql_grant_role" "role_memberships" {
+  for_each = { for membership in local.role_membership_pairs : "${membership.role}:${membership.grant_role}" => membership }
+
+  role       = each.value.role
+  grant_role = each.value.grant_role
+
+  depends_on = [postgresql_role.default]
 }
 
 module "parameter_store_write" {

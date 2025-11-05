@@ -70,6 +70,7 @@ variable "additional_users" {
       schema : string
       object_type : string
     }))
+    role_memberships : optional(list(string), [])
   }))
   default     = {}
   description = <<-EOT

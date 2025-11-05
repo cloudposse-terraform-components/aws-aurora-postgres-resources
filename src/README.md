@@ -75,7 +75,6 @@ components:
                 schema: ""
 ```
 
-
 <!-- markdownlint-disable -->
 ## Requirements
 
