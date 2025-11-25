@@ -55,7 +55,7 @@ module "additional_users" {
 }
 
 module "additional_grants" {
-  for_each = var.additional_grants
+  for_each = local.enabled ? var.additional_grants : {}
   source   = "./modules/postgresql-user"
 
   service_name = each.key
