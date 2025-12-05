@@ -23,9 +23,24 @@ variable "grants" {
     object_type : string
   }))
   description = <<-EOT
-    List of { grant: [<grant>, <grant>, ...], db: "db", schema: "", object_type: "database"}.
+    List of { grant: [<grant>, <grant>, ...], db: "db", schema: "", object_type: "database" }.
     EOT
   default     = [{ grant : ["ALL"], db : "*", schema : "", object_type : "database" }]
+}
+
+variable "default_privileges" {
+  type = list(object({
+    role : string
+    privileges : list(string)
+    db : string
+    schema : optional(string, "")
+    object_type : string
+  }))
+  description = <<-EOT
+  List of { role: "", privileges: [<grant>, <grant>, ...], db: "db", schema: "", object_type: "table" }
+  Role refers to the target database role (user) that will be automatically granted the specified privileges when the created by this module creates the specified objects.
+  EOT
+  default     = []
 }
 
 variable "role_memberships" {

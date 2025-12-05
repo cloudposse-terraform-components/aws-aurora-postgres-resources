@@ -70,11 +70,18 @@ variable "additional_users" {
       schema : string
       object_type : string
     }))
+    default_privileges : optional(list(object({
+      role : string
+      privileges : list(string)
+      db : string
+      schema : string
+      object_type : string
+    })), [])
     role_memberships : optional(list(string), [])
   }))
   default     = {}
   description = <<-EOT
-    Create additional database user for a service, specifying username, grants, and optional password.
+    Create additional database user for a service, specifying username, (default) grants, and optional password.
     If no password is specified, one will be generated. Username and password will be stored in
     SSM parameter store under the service's key.
     EOT
