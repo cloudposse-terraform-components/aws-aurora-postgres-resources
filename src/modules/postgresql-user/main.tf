@@ -40,6 +40,7 @@ resource "postgresql_role" "default" {
   name     = local.db_user
   password = local.db_password
   login    = true
+  roles    = var.role_memberships
 }
 
 # Apply the configured grants to the user
