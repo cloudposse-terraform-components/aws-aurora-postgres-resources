@@ -1,6 +1,7 @@
 # Aurora Postgresql User
 
 
+
 <!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 <!-- markdownlint-disable -->
 ## Requirements
@@ -30,6 +31,7 @@
 
 | Name | Type |
 |------|------|
+| [postgresql_default_privileges.default](https://registry.terraform.io/providers/cyrilgdn/postgresql/latest/docs/resources/default_privileges) | resource |
 | [postgresql_grant.default](https://registry.terraform.io/providers/cyrilgdn/postgresql/latest/docs/resources/grant) | resource |
 | [postgresql_grant_role.role_memberships](https://registry.terraform.io/providers/cyrilgdn/postgresql/latest/docs/resources/grant_role) | resource |
 | [postgresql_role.default](https://registry.terraform.io/providers/cyrilgdn/postgresql/latest/docs/resources/role) | resource |
@@ -44,11 +46,12 @@
 | <a name="input_context"></a> [context](#input\_context) | Single object for setting entire context at once.<br/>See description of individual variables for details.<br/>Leave string and numeric variables as `null` to use default value.<br/>Individual variable settings (non-null) override settings in context object,<br/>except for attributes, tags, and additional\_tag\_map, which are merged. | `any` | <pre>{<br/>  "additional_tag_map": {},<br/>  "attributes": [],<br/>  "delimiter": null,<br/>  "descriptor_formats": {},<br/>  "enabled": true,<br/>  "environment": null,<br/>  "id_length_limit": null,<br/>  "label_key_case": null,<br/>  "label_order": [],<br/>  "label_value_case": null,<br/>  "labels_as_tags": [<br/>    "unset"<br/>  ],<br/>  "name": null,<br/>  "namespace": null,<br/>  "regex_replace_chars": null,<br/>  "stage": null,<br/>  "tags": {},<br/>  "tenant": null<br/>}</pre> | no |
 | <a name="input_db_password"></a> [db\_password](#input\_db\_password) | PostgreSQL password created user (generated if not provided) | `string` | `""` | no |
 | <a name="input_db_user"></a> [db\_user](#input\_db\_user) | PostgreSQL user name to create (default is service name) | `string` | `""` | no |
+| <a name="input_default_privileges"></a> [default\_privileges](#input\_default\_privileges) | List of { role: "", privileges: [<grant>, <grant>, ...], db: "db", schema: "", object\_type: "table" }<br/>Role refers to the target database role (user) that will be automatically granted the specified privileges when the created by this module creates the specified objects. | <pre>list(object({<br/>    role : string<br/>    privileges : list(string)<br/>    db : string<br/>    schema : optional(string, "")<br/>    object_type : string<br/>  }))</pre> | `[]` | no |
 | <a name="input_delimiter"></a> [delimiter](#input\_delimiter) | Delimiter to be used between ID elements.<br/>Defaults to `-` (hyphen). Set to `""` to use no delimiter at all. | `string` | `null` | no |
 | <a name="input_descriptor_formats"></a> [descriptor\_formats](#input\_descriptor\_formats) | Describe additional descriptors to be output in the `descriptors` output map.<br/>Map of maps. Keys are names of descriptors. Values are maps of the form<br/>`{<br/>  format = string<br/>  labels = list(string)<br/>}`<br/>(Type is `any` so the map values can later be enhanced to provide additional options.)<br/>`format` is a Terraform format string to be passed to the `format()` function.<br/>`labels` is a list of labels, in order, to pass to `format()` function.<br/>Label values will be normalized before being passed to `format()` so they will be<br/>identical to how they appear in `id`.<br/>Default is `{}` (`descriptors` output will be empty). | `any` | `{}` | no |
 | <a name="input_enabled"></a> [enabled](#input\_enabled) | Set to false to prevent the module from creating any resources | `bool` | `null` | no |
 | <a name="input_environment"></a> [environment](#input\_environment) | ID element. Usually used for region e.g. 'uw2', 'us-west-2', OR role 'prod', 'staging', 'dev', 'UAT' | `string` | `null` | no |
-| <a name="input_grants"></a> [grants](#input\_grants) | List of { grant: [<grant>, <grant>, ...], db: "db", schema: "", object\_type: "database"}. | <pre>list(object({<br/>    grant : list(string)<br/>    db : string<br/>    schema : optional(string, "")<br/>    object_type : string<br/>  }))</pre> | <pre>[<br/>  {<br/>    "db": "*",<br/>    "grant": [<br/>      "ALL"<br/>    ],<br/>    "object_type": "database",<br/>    "schema": ""<br/>  }<br/>]</pre> | no |
+| <a name="input_grants"></a> [grants](#input\_grants) | List of { grant: [<grant>, <grant>, ...], db: "db", schema: "", object\_type: "database" }. | <pre>list(object({<br/>    grant : list(string)<br/>    db : string<br/>    schema : optional(string, "")<br/>    object_type : string<br/>  }))</pre> | <pre>[<br/>  {<br/>    "db": "*",<br/>    "grant": [<br/>      "ALL"<br/>    ],<br/>    "object_type": "database",<br/>    "schema": ""<br/>  }<br/>]</pre> | no |
 | <a name="input_id_length_limit"></a> [id\_length\_limit](#input\_id\_length\_limit) | Limit `id` to this many characters (minimum 6).<br/>Set to `0` for unlimited length.<br/>Set to `null` for keep the existing setting, which defaults to `0`.<br/>Does not affect `id_full`. | `number` | `null` | no |
 | <a name="input_kms_key_id"></a> [kms\_key\_id](#input\_kms\_key\_id) | KMS key ID, ARN, or alias to use for encrypting the database | `string` | `"alias/aws/rds"` | no |
 | <a name="input_label_key_case"></a> [label\_key\_case](#input\_label\_key\_case) | Controls the letter case of the `tags` keys (label names) for tags generated by this module.<br/>Does not affect keys of tags passed in via the `tags` input.<br/>Possible values: `lower`, `title`, `upper`.<br/>Default value: `title`. | `string` | `null` | no |
@@ -76,5 +79,6 @@
 | <a name="output_notice"></a> [notice](#output\_notice) | Note to user |
 <!-- markdownlint-restore -->
 <!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+
 
 
