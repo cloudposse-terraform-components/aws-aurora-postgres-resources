@@ -62,6 +62,23 @@ resource "postgresql_grant" "default" {
   privileges = contains(var.grants[count.index].grant, "ALL") ? ((length(var.grants[count.index].schema) > 0) ? local.all_privileges_schema : local.all_privileges_database) : var.grants[count.index].grant
 }
 
+# Apply the configured default privileges to the user
+resource "postgresql_default_privileges" "default" {
+  count = local.enabled ? length(var.default_privileges) : 0
+  owner = join("", postgresql_role.default[*].name)
+
+  role        = var.default_privileges[count.index].role
+  database    = var.default_privileges[count.index].db
+  schema      = var.default_privileges[count.index].schema
+  object_type = var.default_privileges[count.index].object_type
+
+
+  # Conditionally set the privileges to either the explicit list of database privileges
+  # or schema privileges if this is a db grant or a schema grant respectively.
+  # We can determine this is a schema grant if a schema is given
+  privileges = contains(var.default_privileges[count.index].privileges, "ALL") ? ((length(var.default_privileges[count.index].schema) > 0) ? local.all_privileges_schema : local.all_privileges_database) : var.default_privileges[count.index].privileges
+}
+
 resource "postgresql_grant_role" "role_memberships" {
   for_each = { for membership in local.role_membership_pairs : "${membership.role}:${membership.grant_role}" => membership }
 

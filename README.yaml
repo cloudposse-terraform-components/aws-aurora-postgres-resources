@@ -71,9 +71,16 @@ usage: |-
             role_memberships:
               - reporting_reader
               - reporting_writer
+            default_privileges:
+              - role: another_role
+                privileges: ["SELECT", "INSERT", "UPDATE", "DELETE"]
+                db: example
+                object_type: table
+                schema: ""
   ```
 
   Use the optional `role_memberships` list inside an `additional_users` entry to grant existing database roles to the user managed by this module.
+  Use the optional `default_privileges` list inside an `additional_users` entry to grant default privileges to the specified role. Whenever the user managed by this module creates a new object of the specified type in the specified schema, the specified role will be automatically granted the specified privileges.
 
 references:
   - name: "cloudposse-terraform-components"
