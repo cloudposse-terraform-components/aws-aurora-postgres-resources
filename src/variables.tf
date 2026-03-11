@@ -35,18 +35,6 @@ variable "admin_password" {
   default     = ""
 }
 
-variable "db_name" {
-  type        = string
-  description = "Database name (default is not to create a database)"
-  default     = ""
-}
-
-variable "cluster_enabled" {
-  type        = string
-  default     = true
-  description = "Set to `false` to prevent the module from creating any resources"
-}
-
 variable "kms_key_arn" {
   type        = string
   description = "The ARN for the KMS encryption key."

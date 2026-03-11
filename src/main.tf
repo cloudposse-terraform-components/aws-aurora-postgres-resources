@@ -10,7 +10,6 @@ locals {
 
   kms_key_arn = coalesce(module.aurora_postgres.outputs.kms_key_arn, var.kms_key_arn)
 
-  default_schema_owner = "postgres"
 }
 
 data "aws_ssm_parameter" "password" {
