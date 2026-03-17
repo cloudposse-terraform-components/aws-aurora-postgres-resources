@@ -23,6 +23,10 @@ locals {
   # https://github.com/cyrilgdn/terraform-provider-postgresql/blob/master/postgresql/helpers.go#L237-L244
   all_privileges_database = ["CREATE", "CONNECT", "TEMPORARY"]
   all_privileges_schema   = ["CREATE", "USAGE"]
+  all_privileges_table    = ["SELECT", "INSERT", "UPDATE", "DELETE", "TRUNCATE", "REFERENCES", "TRIGGER"]
+  all_privileges_sequence = ["USAGE", "SELECT", "UPDATE"]
+  all_privileges_function = ["EXECUTE"]
+  all_privileges_type     = ["USAGE"]
   role_membership_pairs = local.enabled ? [
     for grant_role in var.role_memberships : {
       role       = local.db_user
@@ -73,10 +77,17 @@ resource "postgresql_default_privileges" "default" {
   object_type = var.default_privileges[count.index].object_type
 
 
-  # Conditionally set the privileges to either the explicit list of database privileges
-  # or schema privileges if this is a db grant or a schema grant respectively.
-  # We can determine this is a schema grant if a schema is given
-  privileges = contains(var.default_privileges[count.index].privileges, "ALL") ? ((length(var.default_privileges[count.index].schema) > 0) ? local.all_privileges_schema : local.all_privileges_database) : var.default_privileges[count.index].privileges
+  # Expand "ALL" to the correct set of privileges based on the object_type.
+  # Unlike postgresql_grant (which operates on database/schema), default_privileges
+  # operates on table, sequence, function, type, and schema object types.
+  privileges = contains(var.default_privileges[count.index].privileges, "ALL") ? (
+    var.default_privileges[count.index].object_type == "table" ? local.all_privileges_table :
+    var.default_privileges[count.index].object_type == "sequence" ? local.all_privileges_sequence :
+    var.default_privileges[count.index].object_type == "function" ? local.all_privileges_function :
+    var.default_privileges[count.index].object_type == "type" ? local.all_privileges_type :
+    var.default_privileges[count.index].object_type == "schema" ? local.all_privileges_schema :
+    var.default_privileges[count.index].privileges
+  ) : var.default_privileges[count.index].privileges
 }
 
 resource "postgresql_grant_role" "role_memberships" {

@@ -38,7 +38,7 @@ variable "default_privileges" {
   }))
   description = <<-EOT
   List of { role: "", privileges: [<grant>, <grant>, ...], db: "db", schema: "", object_type: "table" }
-  Role refers to the target database role (user) that will be automatically granted the specified privileges when the created by this module creates the specified objects.
+  Role refers to the target database role (user) that will be automatically granted the specified privileges when the user created by this module creates the specified objects.
   EOT
   default     = []
 }

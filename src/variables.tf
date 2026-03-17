@@ -74,7 +74,7 @@ variable "additional_users" {
       role : string
       privileges : list(string)
       db : string
-      schema : string
+      schema : optional(string, "")
       object_type : string
     })), [])
     role_memberships : optional(list(string), [])
