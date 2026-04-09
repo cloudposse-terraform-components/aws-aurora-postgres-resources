@@ -38,9 +38,16 @@ variable "default_privileges" {
   }))
   description = <<-EOT
   List of { role: "", privileges: [<grant>, <grant>, ...], db: "db", schema: "", object_type: "table" }
-  Role refers to the target database role (user) that will be automatically granted the specified privileges when the created by this module creates the specified objects.
+  Role refers to the target database role (user) that will be automatically granted the specified privileges when the user created by this module creates the specified objects.
   EOT
   default     = []
+
+  validation {
+    condition = alltrue([
+      for dp in var.default_privileges : contains(["table", "sequence", "function", "type", "schema"], dp.object_type)
+    ])
+    error_message = "Each default_privileges object_type must be one of: table, sequence, function, type, schema."
+  }
 }
 
 variable "role_memberships" {

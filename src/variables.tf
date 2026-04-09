@@ -67,14 +67,14 @@ variable "additional_users" {
     grants : list(object({
       grant : list(string)
       db : string
-      schema : string
+      schema : optional(string, "")
       object_type : string
     }))
     default_privileges : optional(list(object({
       role : string
       privileges : list(string)
       db : string
-      schema : string
+      schema : optional(string, "")
       object_type : string
     })), [])
     role_memberships : optional(list(string), [])
