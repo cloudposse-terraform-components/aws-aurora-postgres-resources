@@ -46,6 +46,12 @@ resource "postgresql_role" "default" {
   name     = local.db_user
   password = local.db_password
   login    = true
+
+  # Ignore role memberships managed by postgresql_grant_role to prevent
+  # infinite plan loop (#55)
+  lifecycle {
+    ignore_changes = [roles]
+  }
 }
 
 # Apply the configured grants to the user
