@@ -101,6 +101,20 @@ variable "additional_grants" {
     EOT
 }
 
+variable "additional_extensions" {
+  type = list(object({
+    name     = string
+    database = string
+  }))
+  default     = []
+  description = <<-EOT
+    Create additional Postgres extensions in the specified databases. Each entry
+    runs CREATE EXTENSION IF NOT EXISTS in the named database. The cluster must
+    already preload the extension's library via shared_preload_libraries when
+    required by the extension.
+  EOT
+}
+
 variable "additional_schemas" {
   # Map key is the name of the schema
   type = map(object({
