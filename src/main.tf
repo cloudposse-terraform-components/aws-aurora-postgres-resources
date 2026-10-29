@@ -34,6 +34,19 @@ resource "postgresql_schema" "additional" {
   database = try(each.value.database, null) # If null, the database used by your provider configuration
 }
 
+resource "postgresql_extension" "additional" {
+  for_each = local.enabled ? {
+    for ext in var.additional_extensions : "${ext.database}:${ext.name}" => ext
+  } : {}
+
+  name     = each.value.name
+  database = each.value.database
+
+  depends_on = [
+    postgresql_database.additional,
+  ]
+}
+
 module "additional_users" {
   for_each = local.enabled ? var.additional_users : {}
   source   = "./modules/postgresql-user"
