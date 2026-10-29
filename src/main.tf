@@ -39,8 +39,9 @@ resource "postgresql_extension" "additional" {
     for ext in var.additional_extensions : "${ext.database}:${ext.name}" => ext
   } : {}
 
-  name     = each.value.name
-  database = each.value.database
+  name           = each.value.name
+  database       = each.value.database
+  create_cascade = each.value.create_cascade
 
   depends_on = [
     postgresql_database.additional,
@@ -63,6 +64,7 @@ module "additional_users" {
   depends_on = [
     postgresql_database.additional,
     postgresql_schema.additional,
+    postgresql_extension.additional,
   ]
 
   context = module.this.context
@@ -86,6 +88,7 @@ module "additional_grants" {
   depends_on = [
     postgresql_database.additional,
     postgresql_schema.additional,
+    postgresql_extension.additional,
   ]
 
   context = module.this.context

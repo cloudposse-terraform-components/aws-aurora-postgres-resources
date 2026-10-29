@@ -103,8 +103,9 @@ variable "additional_grants" {
 
 variable "additional_extensions" {
   type = list(object({
-    name     = string
-    database = string
+    name           = string
+    database       = string
+    create_cascade = optional(bool, false)
   }))
   default     = []
   description = <<-EOT
@@ -112,6 +113,14 @@ variable "additional_extensions" {
     runs CREATE EXTENSION IF NOT EXISTS in the named database. The cluster must
     already preload the extension's library via shared_preload_libraries when
     required by the extension.
+
+    Set `create_cascade = true` to also install the extensions it requires
+    (CREATE EXTENSION ... CASCADE). For an extension that depends on another,
+    list only the dependent one with `create_cascade = true` rather than both,
+    since entries are created in parallel.
+
+    Users and grants are created after the extensions, so they can reference
+    schemas an extension creates.
   EOT
 }
 
