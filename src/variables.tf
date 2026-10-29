@@ -115,9 +115,10 @@ variable "additional_extensions" {
     required by the extension.
 
     Set `create_cascade = true` to also install the extensions it requires
-    (CREATE EXTENSION ... CASCADE). For an extension that depends on another,
-    list only the dependent one with `create_cascade = true` rather than both,
-    since entries are created in parallel.
+    (CREATE EXTENSION ... CASCADE). Entries with `create_cascade = true` are
+    created after all other entries, so an extension can be listed together with
+    its prerequisite (for example `postgis`, then `postgis_topology` with
+    `create_cascade = true`) without the two being created concurrently.
 
     Users and grants are created after the extensions, so they can reference
     schemas an extension creates.
