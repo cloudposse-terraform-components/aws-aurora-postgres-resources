@@ -34,6 +34,37 @@ resource "postgresql_schema" "additional" {
   database = try(each.value.database, null) # If null, the database used by your provider configuration
 }
 
+# Extensions are created in two passes: plain entries first, then entries with
+# create_cascade. An extension that requires another (postgis_topology needs postgis)
+# can then be listed alongside its prerequisite without the two racing.
+resource "postgresql_extension" "additional" {
+  for_each = local.enabled ? {
+    for ext in var.additional_extensions : "${ext.database}:${ext.name}" => ext if !ext.create_cascade
+  } : {}
+
+  name     = each.value.name
+  database = each.value.database
+
+  depends_on = [
+    postgresql_database.additional,
+  ]
+}
+
+resource "postgresql_extension" "additional_cascade" {
+  for_each = local.enabled ? {
+    for ext in var.additional_extensions : "${ext.database}:${ext.name}" => ext if ext.create_cascade
+  } : {}
+
+  name           = each.value.name
+  database       = each.value.database
+  create_cascade = true
+
+  depends_on = [
+    postgresql_database.additional,
+    postgresql_extension.additional,
+  ]
+}
+
 module "additional_users" {
   for_each = local.enabled ? var.additional_users : {}
   source   = "./modules/postgresql-user"
@@ -50,6 +81,8 @@ module "additional_users" {
   depends_on = [
     postgresql_database.additional,
     postgresql_schema.additional,
+    postgresql_extension.additional,
+    postgresql_extension.additional_cascade,
   ]
 
   context = module.this.context
@@ -73,6 +106,8 @@ module "additional_grants" {
   depends_on = [
     postgresql_database.additional,
     postgresql_schema.additional,
+    postgresql_extension.additional,
+    postgresql_extension.additional_cascade,
   ]
 
   context = module.this.context

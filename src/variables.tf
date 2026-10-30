@@ -101,6 +101,30 @@ variable "additional_grants" {
     EOT
 }
 
+variable "additional_extensions" {
+  type = list(object({
+    name           = string
+    database       = string
+    create_cascade = optional(bool, false)
+  }))
+  default     = []
+  description = <<-EOT
+    Create additional Postgres extensions in the specified databases. Each entry
+    runs CREATE EXTENSION IF NOT EXISTS in the named database. The cluster must
+    already preload the extension's library via shared_preload_libraries when
+    required by the extension.
+
+    Set `create_cascade = true` to also install the extensions it requires
+    (CREATE EXTENSION ... CASCADE). Entries with `create_cascade = true` are
+    created after all other entries, so an extension can be listed together with
+    its prerequisite (for example `postgis`, then `postgis_topology` with
+    `create_cascade = true`) without the two being created concurrently.
+
+    Users and grants are created after the extensions, so they can reference
+    schemas an extension creates.
+  EOT
+}
+
 variable "additional_schemas" {
   # Map key is the name of the schema
   type = map(object({
